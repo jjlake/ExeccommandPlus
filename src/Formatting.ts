@@ -5,7 +5,6 @@ const rangy = require('rangy')
 
 type Formatting = {
     tag: string;
-    // valueAttribute: string|null;
     value: string|null;
 };
 
@@ -62,11 +61,11 @@ export function applyFormatting(container: HTMLElement, range: RangyRange, forma
                 case RelationType.CONTAINS:
                     manipulation.expand(container, relation.elem, range);
             }
-        }// else {
-            // If no intersection with existing formatting elements of same type,
-            //  just surround the range with a new formatting element.
-            manipulation.surround(range, formatting);
-        //}
+        }
+        
+        // If no intersection with existing formatting elements of same type,
+        //  just surround the range with a new formatting element.
+        manipulation.surround(range, formatting);
 
         // Set selection to collapse at end of the modified range.
         var newSelectionRange = rangy.createRange();
@@ -85,8 +84,6 @@ export function applyFormatting(container: HTMLElement, range: RangyRange, forma
                 collapseSelectionAfterNode(first);
             }
             } else {
-                // var elem = document.createElement(formatting.tag as string);
-                // return elem;
                 return true;
             }
         }

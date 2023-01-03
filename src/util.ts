@@ -19,7 +19,6 @@ function getParents(limit: HTMLElement, currentNode: HTMLElement){
 export function getParentOfType(limit: HTMLElement, currentNode: HTMLElement, formatting: Formatting): HTMLElement|null {
     if(currentNode!=limit){
         while(currentNode!=limit){
-            // var tag = formatting.tag;
             let value = null
             let getValFn = tools[toolTags[formatting.tag]];
             if(getValFn != undefined)

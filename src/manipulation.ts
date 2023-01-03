@@ -1,4 +1,5 @@
 import Formatting, { getFormatting } from "./Formatting";
+import { equal } from "./relation";
 import { tools, toolTags } from "./tools";
 const rangy = require("rangy");
 require("rangy/lib/rangy-textrange");
@@ -14,6 +15,22 @@ export function surround(range: RangyRange, formatting: Formatting): HTMLElement
     if(formatting.value!=null){
         tools[toolTags[formatting.tag]]["set"](elem, formatting.value);
     }
+    
+    // Clean up any nodes within with the same tag...
+    var currentNode: HTMLElement|null = elem;
+    var treeWalker = document.createTreeWalker(currentNode as Node, NodeFilter.SHOW_ELEMENT);
+    let toRemove = [];
+    while(currentNode = (treeWalker.nextNode() as HTMLElement)){
+        if(formatting.tag == getFormatting(currentNode).tag){
+            toRemove.push(currentNode);
+        }
+        currentNode = treeWalker.nextNode() as HTMLElement;
+    }
+    
+    toRemove.forEach(elem => {
+        elem.outerHTML = elem.innerHTML;
+    })
+
     return elem;
 }
 

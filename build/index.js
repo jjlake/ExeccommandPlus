@@ -380,6 +380,19 @@ function surround(range, formatting) {
     if (formatting.value != null) {
         tools_1.tools[tools_1.toolTags[formatting.tag]]["set"](elem, formatting.value);
     }
+    // Clean up any nodes within with the same tag...
+    var currentNode = elem;
+    var treeWalker = document.createTreeWalker(currentNode, NodeFilter.SHOW_ELEMENT);
+    let toRemove = [];
+    while (currentNode = treeWalker.nextNode()) {
+        if (formatting.tag == (0, Formatting_1.getFormatting)(currentNode).tag) {
+            toRemove.push(currentNode);
+        }
+        currentNode = treeWalker.nextNode();
+    }
+    toRemove.forEach(elem => {
+        elem.outerHTML = elem.innerHTML;
+    });
     return elem;
 }
 exports.surround = surround;
@@ -457,7 +470,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getRelation = exports.within = exports.RelationType = void 0;
+exports.getRelation = exports.within = exports.equal = exports.RelationType = void 0;
 const Formatting_1 = require("./Formatting");
 // import * as manipulation from "./manipulation";
 const util = __importStar(require("./util"));
@@ -474,6 +487,7 @@ var RelationType;
 function equal(a, b) {
     return JSON.stringify(a) == JSON.stringify(b);
 }
+exports.equal = equal;
 function within(container, formatting) {
     var range = rangy.getSelection().getRangeAt(0);
     var parent = util.getParentOfType(container, range.commonAncestorContainer, formatting);

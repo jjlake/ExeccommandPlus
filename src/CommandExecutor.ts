@@ -33,7 +33,6 @@ export class CommandExecutor {
         this.resetPendingNode();
         this.mutationTracker.undo();
         this.mutationTracker.start();
-        console.log(this.mutationTracker)
     }
 
     // Redo the latest set of changes undone by user.

@@ -1,5 +1,3 @@
-// import { waitForMutation } from "./MutationTracker";
-
 const rangy = require('rangy');
 
 // For a specific element in the DOM tree, get the innermost (i.e. deepest) child node.

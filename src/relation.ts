@@ -1,5 +1,4 @@
 import Formatting, { getFormatting } from "./Formatting";
-// import * as manipulation from "./manipulation";
 import * as util from "./util";
 
 var rangy = require("rangy");
@@ -23,7 +22,7 @@ export type TextRange = {
 }
 
 // Check if two objects with keys in the *same order* (i.e. types) are equal.
-function equal(a: Object, b: Object){
+export function equal(a: Object, b: Object){
     return JSON.stringify(a)==JSON.stringify(b);
 }
 
@@ -53,17 +52,12 @@ export function getRelation(container: HTMLElement, formatting: Formatting): Rel
         var treeWalker = document.createTreeWalker(currentNode as Node, NodeFilter.SHOW_ELEMENT);
         var range = rangy.createRange();
         var parent = within(container, formatting)
-        console.log(parent)
-        // console.log(formatting, getFormatting(parent as HTMLElement));
-        if(parent/* && formatting==getFormatting(parent)*/){
+        if(parent){
             return {elem: parent, type: RelationType.WITHIN};
         }
         while(currentNode = (treeWalker.nextNode() as HTMLElement)){
             range.selectNode(currentNode);
             var textRange = range.toCharacterRange(container);
-            console.log(formatting, getFormatting(currentNode))
-            // if(formatting.tag!==null && currentNode.tagName==formatting.tag){
-            // if(formatting==getFormatting(currentNode)){
             if(equal(formatting, getFormatting(currentNode))){
                 var relationType: RelationType|null = null;
                 // Catch the instance where the selection collides with the end of the containing node.
