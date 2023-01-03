@@ -25,7 +25,6 @@ export class CommandExecutor {
         this.redo = this.redo.bind(this);
 
         this.addEventListeners();
-
     }
 
     // Undo the latest set of changes caused by a user action.
@@ -34,6 +33,7 @@ export class CommandExecutor {
         this.resetPendingNode();
         this.mutationTracker.undo();
         this.mutationTracker.start();
+        console.log(this.mutationTracker)
     }
 
     // Redo the latest set of changes undone by user.
@@ -65,6 +65,7 @@ export class CommandExecutor {
         });
         this.mutationTracker.start();
         this.elem.focus();
+        console.log(this.mutationTracker)
     }
 
     // Start tracking all mutations (for undo/redo) in the attached contenteditable element.
@@ -102,23 +103,26 @@ export class CommandExecutor {
     // Updates recorded caret position to current (reported) caret position
     //  inside attached contenteditable element.
     maintaincaret(event: Event){
-        let range = rangy.getSelection().getRangeAt(0);
-        let caretPosition = range.toCharacterRange(this.elem).start;
-        if(this.pendingNode!=null){
-            if(event instanceof KeyboardEvent && (event.type=="keydown")){
-                // IF key length = 1, then assume it's a printed character... 
-                // so add it to, then insert the pending node.
-                if(event.key.length===1&&this.caretPosition==caretPosition){
-                    event.preventDefault(); // prevents the user input being 
-                                  // inserted without the pending formatting.
-                    this.pendingNode?.insert(event.key, range);
-                } else if(this.caretPosition!=caretPosition){
-                    this.caretPosition = caretPosition;
+        let selection = rangy.getSelection();
+        if(selection.rangeCount>=1){
+            let range = selection.getRangeAt(0);
+            let caretPosition = range.toCharacterRange(this.elem).start;
+            if(this.pendingNode!=null){
+                if(event instanceof KeyboardEvent && (event.type=="keydown")){
+                    // IF key length = 1, then assume it's a printed character... 
+                    // so add it to, then insert the pending node.
+                    if(event.key.length===1&&this.caretPosition==caretPosition){
+                        event.preventDefault(); // prevents the user input being 
+                                    // inserted without the pending formatting.
+                        this.pendingNode?.insert(event.key, range);
+                    } else if(this.caretPosition!=caretPosition){
+                        this.caretPosition = caretPosition;
+                    }
+                    this.resetPendingNode();
                 }
-                this.resetPendingNode();
             }
+            this.caretPosition = caretPosition;
         }
-        this.caretPosition = caretPosition;
     }
 
     // Add relevant user input event listeners.

@@ -20,13 +20,12 @@ export function getFormatting(elem: HTMLElement): Formatting {
     }
     return {
         tag: elem.tagName,
-        value: tool(elem)
+        value: tool["get"](elem)
     }
 }
 
 const EMPTY_TEXT_NODE_CONTENTS = '\u200B';
 const PLACEHOLDER_NODE_TAG = 'div';
-
 
 export function createEmptyTextNode(){
     var elem = document.createElement("span");
@@ -63,11 +62,11 @@ export function applyFormatting(container: HTMLElement, range: RangyRange, forma
                 case RelationType.CONTAINS:
                     manipulation.expand(container, relation.elem, range);
             }
-        } else {
+        }// else {
             // If no intersection with existing formatting elements of same type,
             //  just surround the range with a new formatting element.
             manipulation.surround(range, formatting);
-        }
+        //}
 
         // Set selection to collapse at end of the modified range.
         var newSelectionRange = rangy.createRange();
@@ -84,13 +83,14 @@ export function applyFormatting(container: HTMLElement, range: RangyRange, forma
                 let first = manipulation.split(range, container, relation.elem);
                 // Set selection to collapse at end of the modified range.
                 collapseSelectionAfterNode(first);
+            }
             } else {
                 // var elem = document.createElement(formatting.tag as string);
                 // return elem;
                 return true;
             }
         }
-    }
+    
     return false;
 }
 

@@ -21,13 +21,6 @@ function getValue(elem: HTMLElement): string{
     return tools[toolTags[elem.tagName]]["get"](elem);
 }
 
-// function getFormatting(elem: HTMLElement): Formatting {
-//     return {
-//         'tag': elem.tagName,
-//         'value': getValue(elem)
-//     };
-// }
-
 export function split(midRange: RangyRange, container: HTMLElement, parent: HTMLElement): HTMLElement {
     var range: RangyRange = rangy.createRange();
     range.selectNodeContents(parent);
@@ -39,13 +32,9 @@ export function split(midRange: RangyRange, container: HTMLElement, parent: HTML
 
     (range as any).selectCharacters(container, charRange.start, midCharRange.start);
     let first = surround(range, formatting);
-    // this.operations.push(new SurroundOperation(container, new TextRange(this.receiver.elem, range), formattingTool))
     
     (range as any).selectCharacters(container, midCharRange.end, charRange.end);
     surround(range, formatting)
-    // this.operations.push(new SurroundOperation(receiver, new TextRange(this.receiver.elem, range), formattingTool))
-    // this.operations.push(new UnsurroundOperation(this.receiver, element.id));
-    // console.log(element)
     return first;
 }
 
@@ -58,14 +47,13 @@ function alignToTextRange(containerNode: HTMLElement, range: RangyRange): RangyR
 
 export function expand(containerNode: HTMLElement, elem: HTMLElement, range: RangyRange){
     elem.id = "temp";
-    // console.log(document.getElementById("temp"))
-
+    
     range = alignToTextRange(containerNode, range);
     var elemRange = rangy.createRange();
     elemRange.selectNode(elem);
     elemRange = alignToTextRange(containerNode, elemRange)
 
-    var unionRange = range.union(elemRange) // <-- problem line!
+    var unionRange = range.union(elemRange)
     var formatting = getFormatting(elem);
     surround(unionRange, formatting);
     elem = document.getElementById("temp") as HTMLElement;
@@ -76,14 +64,11 @@ export function expand(containerNode: HTMLElement, elem: HTMLElement, range: Ran
 
 
 export function extend(selectionRange: RangyRange, container: HTMLElement, tag: string){
-        // var containerId = container.id;
-
-        Array.from(container.getElementsByTagName(tag)).forEach(elem => {
-            var element = elem as HTMLElement;
-            var range = rangy.createRange();
-            range.selectNode(element);
-            if(selectionRange.intersectsOrTouchesRange(range))
-                expand(container, element, selectionRange);
-        })
-
+    Array.from(container.getElementsByTagName(tag)).forEach(elem => {
+        var element = elem as HTMLElement;
+        var range = rangy.createRange();
+        range.selectNode(element);
+        if(selectionRange.intersectsOrTouchesRange(range))
+            expand(container, element, selectionRange);
+    })
 }

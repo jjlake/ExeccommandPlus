@@ -23,6 +23,20 @@ addEventListener("load", function(){
         commandExecutor.execute(command);
         document.getElementById("inputarea").focus();
     });
+    let fgColSelect = document.getElementById("FgColSelect");
+    fgColSelect.addEventListener("change", function(){
+        console.log(fgColSelect.value);
+        var command = new execCommander.Command({tag: 'FONT', value: fgColSelect.value}, rangy.getSelection().getRangeAt(0));
+        commandExecutor.execute(command);
+        document.getElementById("inputarea").focus();
+    });
+    let bgColSelect = document.getElementById("BgColSelect");
+    bgColSelect.addEventListener("change", function(){
+        console.log(fgColSelect.value);
+        var command = new execCommander.Command({tag: 'SPAN', value: bgColSelect.value}, rangy.getSelection().getRangeAt(0));
+        commandExecutor.execute(command);
+        document.getElementById("inputarea").focus();
+    });
 });
 
 
@@ -80,6 +94,7 @@ class CommandExecutor {
         this.resetPendingNode();
         this.mutationTracker.undo();
         this.mutationTracker.start();
+        console.log(this.mutationTracker);
     }
     // Redo the latest set of changes undone by user.
     redo() {
@@ -111,6 +126,7 @@ class CommandExecutor {
             });
             this.mutationTracker.start();
             this.elem.focus();
+            console.log(this.mutationTracker);
         });
     }
     // Start tracking all mutations (for undo/redo) in the attached contenteditable element.
@@ -145,24 +161,27 @@ class CommandExecutor {
     //  inside attached contenteditable element.
     maintaincaret(event) {
         var _a;
-        let range = rangy.getSelection().getRangeAt(0);
-        let caretPosition = range.toCharacterRange(this.elem).start;
-        if (this.pendingNode != null) {
-            if (event instanceof KeyboardEvent && (event.type == "keydown")) {
-                // IF key length = 1, then assume it's a printed character... 
-                // so add it to, then insert the pending node.
-                if (event.key.length === 1 && this.caretPosition == caretPosition) {
-                    event.preventDefault(); // prevents the user input being 
-                    // inserted without the pending formatting.
-                    (_a = this.pendingNode) === null || _a === void 0 ? void 0 : _a.insert(event.key, range);
+        let selection = rangy.getSelection();
+        if (selection.rangeCount >= 1) {
+            let range = selection.getRangeAt(0);
+            let caretPosition = range.toCharacterRange(this.elem).start;
+            if (this.pendingNode != null) {
+                if (event instanceof KeyboardEvent && (event.type == "keydown")) {
+                    // IF key length = 1, then assume it's a printed character... 
+                    // so add it to, then insert the pending node.
+                    if (event.key.length === 1 && this.caretPosition == caretPosition) {
+                        event.preventDefault(); // prevents the user input being 
+                        // inserted without the pending formatting.
+                        (_a = this.pendingNode) === null || _a === void 0 ? void 0 : _a.insert(event.key, range);
+                    }
+                    else if (this.caretPosition != caretPosition) {
+                        this.caretPosition = caretPosition;
+                    }
+                    this.resetPendingNode();
                 }
-                else if (this.caretPosition != caretPosition) {
-                    this.caretPosition = caretPosition;
-                }
-                this.resetPendingNode();
             }
+            this.caretPosition = caretPosition;
         }
-        this.caretPosition = caretPosition;
     }
     // Add relevant user input event listeners.
     addEventListeners() {
@@ -225,7 +244,7 @@ function getFormatting(elem) {
     }
     return {
         tag: elem.tagName,
-        value: tool(elem)
+        value: tool["get"](elem)
     };
 }
 exports.getFormatting = getFormatting;
@@ -264,12 +283,11 @@ function applyFormatting(container, range, formatting) {
                 case relation_1.RelationType.CONTAINS:
                     manipulation.expand(container, relation.elem, range);
             }
-        }
-        else {
-            // If no intersection with existing formatting elements of same type,
-            //  just surround the range with a new formatting element.
-            manipulation.surround(range, formatting);
-        }
+        } // else {
+        // If no intersection with existing formatting elements of same type,
+        //  just surround the range with a new formatting element.
+        manipulation.surround(range, formatting);
+        //}
         // Set selection to collapse at end of the modified range.
         var newSelectionRange = rangy.createRange();
         newSelectionRange.selectCharacters(container, textRange.start, textRange.end);
@@ -286,11 +304,11 @@ function applyFormatting(container, range, formatting) {
                 // Set selection to collapse at end of the modified range.
                 collapseSelectionAfterNode(first);
             }
-            else {
-                // var elem = document.createElement(formatting.tag as string);
-                // return elem;
-                return true;
-            }
+        }
+        else {
+            // var elem = document.createElement(formatting.tag as string);
+            // return elem;
+            return true;
         }
     }
     return false;
@@ -368,12 +386,6 @@ exports.surround = surround;
 function getValue(elem) {
     return tools_1.tools[tools_1.toolTags[elem.tagName]]["get"](elem);
 }
-// function getFormatting(elem: HTMLElement): Formatting {
-//     return {
-//         'tag': elem.tagName,
-//         'value': getValue(elem)
-//     };
-// }
 function split(midRange, container, parent) {
     var range = rangy.createRange();
     range.selectNodeContents(parent);
@@ -383,12 +395,8 @@ function split(midRange, container, parent) {
     parent.outerHTML = parent.innerHTML;
     range.selectCharacters(container, charRange.start, midCharRange.start);
     let first = surround(range, formatting);
-    // this.operations.push(new SurroundOperation(container, new TextRange(this.receiver.elem, range), formattingTool))
     range.selectCharacters(container, midCharRange.end, charRange.end);
     surround(range, formatting);
-    // this.operations.push(new SurroundOperation(receiver, new TextRange(this.receiver.elem, range), formattingTool))
-    // this.operations.push(new UnsurroundOperation(this.receiver, element.id));
-    // console.log(element)
     return first;
 }
 exports.split = split;
@@ -400,12 +408,11 @@ function alignToTextRange(containerNode, range) {
 }
 function expand(containerNode, elem, range) {
     elem.id = "temp";
-    // console.log(document.getElementById("temp"))
     range = alignToTextRange(containerNode, range);
     var elemRange = rangy.createRange();
     elemRange.selectNode(elem);
     elemRange = alignToTextRange(containerNode, elemRange);
-    var unionRange = range.union(elemRange); // <-- problem line!
+    var unionRange = range.union(elemRange);
     var formatting = (0, Formatting_1.getFormatting)(elem);
     surround(unionRange, formatting);
     elem = document.getElementById("temp");
@@ -414,7 +421,6 @@ function expand(containerNode, elem, range) {
 }
 exports.expand = expand;
 function extend(selectionRange, container, tag) {
-    // var containerId = container.id;
     Array.from(container.getElementsByTagName(tag)).forEach(elem => {
         var element = elem;
         var range = rangy.createRange();
@@ -464,9 +470,13 @@ var RelationType;
     RelationType[RelationType["COLLIDES"] = 3] = "COLLIDES";
     RelationType[RelationType["OVERLAPS"] = 4] = "OVERLAPS";
 })(RelationType = exports.RelationType || (exports.RelationType = {}));
+// Check if two objects with keys in the *same order* (i.e. types) are equal.
+function equal(a, b) {
+    return JSON.stringify(a) == JSON.stringify(b);
+}
 function within(container, formatting) {
     var range = rangy.getSelection().getRangeAt(0);
-    var parent = util.getParentOfType(container, range.commonAncestorContainer, formatting.tag);
+    var parent = util.getParentOfType(container, range.commonAncestorContainer, formatting);
     if (!parent)
         return null;
     var textRange = range.toCharacterRange(container);
@@ -474,10 +484,10 @@ function within(container, formatting) {
     parentRange.selectNode(parent);
     var parentTextRange = parentRange.toCharacterRange(container);
     var parentFormatting = (0, Formatting_1.getFormatting)(parent);
-    if (formatting.tag == parentFormatting.tag && formatting.value == parentFormatting.value &&
-        (textRange.start > parentTextRange.start && textRange.end == parentTextRange.end) ||
-        (textRange.start == parentTextRange.start && textRange.end < parentTextRange.end) ||
-        (textRange.start > parentTextRange.start && textRange.end < parentTextRange.end)) {
+    if (equal(formatting, parentFormatting) &&
+        ((textRange.start > parentTextRange.start && textRange.end == parentTextRange.end) ||
+            (textRange.start == parentTextRange.start && textRange.end < parentTextRange.end) ||
+            (textRange.start > parentTextRange.start && textRange.end < parentTextRange.end))) {
         return parent;
     }
     return null;
@@ -490,16 +500,21 @@ function getRelation(container, formatting) {
     var treeWalker = document.createTreeWalker(currentNode, NodeFilter.SHOW_ELEMENT);
     var range = rangy.createRange();
     var parent = within(container, formatting);
-    if (parent) {
+    console.log(parent);
+    // console.log(formatting, getFormatting(parent as HTMLElement));
+    if (parent /* && formatting==getFormatting(parent)*/) {
         return { elem: parent, type: RelationType.WITHIN };
     }
     while (currentNode = treeWalker.nextNode()) {
         range.selectNode(currentNode);
         var textRange = range.toCharacterRange(container);
-        if (formatting.tag !== null && currentNode.tagName == formatting.tag) {
+        console.log(formatting, (0, Formatting_1.getFormatting)(currentNode));
+        // if(formatting.tag!==null && currentNode.tagName==formatting.tag){
+        // if(formatting==getFormatting(currentNode)){
+        if (equal(formatting, (0, Formatting_1.getFormatting)(currentNode))) {
             var relationType = null;
             // Catch the instance where the selection collides with the end of the containing node.
-            if (textRange.start < selectionTextRange.start && textRange.end == selectionTextRange.end) {
+            if (textRange.start < selectionTextRange.start && textRange.end >= selectionTextRange.end) {
                 relationType = RelationType.WITHIN;
             }
             else if (overlaps(selectionTextRange, textRange)) {
@@ -562,32 +577,9 @@ exports.toolTags = {
 
 },{}],9:[function(require,module,exports){
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getRangeAtSelection = exports.getNodeFromBookmark = exports.getParentOfType = void 0;
-const Tool = __importStar(require("./tools"));
+const tools_1 = require("./tools");
 var rangy = require("rangy");
 require("rangy/lib/rangy-textrange");
 function getParents(limit, currentNode) {
@@ -601,12 +593,15 @@ function getParents(limit, currentNode) {
     }
     return parents;
 }
-function getParentOfType(limit, currentNode, /*formatting: Formatting,*/ tag) {
+function getParentOfType(limit, currentNode, formatting) {
     if (currentNode != limit) {
         while (currentNode != limit) {
             // var tag = formatting.tag;
-            // var value = currentNode.getAttribute(formatting.valueAttribute);
-            if (currentNode.tagName == tag /* && formatting.value==value*/) {
+            let value = null;
+            let getValFn = tools_1.tools[tools_1.toolTags[formatting.tag]];
+            if (getValFn != undefined)
+                value = (currentNode);
+            if (currentNode.tagName == formatting.tag && formatting.value == value) {
                 return currentNode;
             }
             currentNode = currentNode.parentNode;
@@ -623,7 +618,7 @@ function getNodeFromBookmark(start, end, formatting) {
         range.selectNode(currentNode);
         var newBookmark = range.toCharacterRange(document.getElementById("inputarea"));
         if (newBookmark.start == start && newBookmark.end == end) {
-            if (formatting.tag !== null && currentNode.tagName == formatting.tag || formatting.tag == null && formatting.value == Tool.tools[formatting.tag]['get'](currentNode))
+            if (formatting.tag !== null && currentNode.tagName == formatting.tag || formatting.tag == null && formatting.value == tools_1.tools[formatting.tag]['get'](currentNode))
                 return currentNode;
         }
     }
@@ -686,12 +681,13 @@ function reverse(record) {
         // Reverse an attribute change recorded in a MutationRecord object.
         case "attributes":
             if (record.target instanceof HTMLElement) {
+                let oldValue = "";
+                if (record.oldValue != null)
+                    oldValue = record.oldValue;
                 if (record.attributeName == null)
                     throw new Error("Invalid operation: Provided attribute name is null.");
-                else if (record.oldValue == null)
-                    throw new Error("Invalid operation: Updated attribute value is null.");
                 else
-                    record.target.setAttribute(record.attributeName, record.oldValue);
+                    record.target.setAttribute(record.attributeName, oldValue);
             }
             else
                 throw new Error("Invalid operation: target node is not a HTML element.");

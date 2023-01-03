@@ -22,9 +22,14 @@ export type TextRange = {
     end: Number
 }
 
+// Check if two objects with keys in the *same order* (i.e. types) are equal.
+function equal(a: Object, b: Object){
+    return JSON.stringify(a)==JSON.stringify(b);
+}
+
 export function within(container: HTMLElement, formatting: Formatting): HTMLElement|null {
     var range = rangy.getSelection().getRangeAt(0);
-    var parent = util.getParentOfType(container, range.commonAncestorContainer as HTMLElement, formatting.tag);
+    var parent = util.getParentOfType(container, range.commonAncestorContainer as HTMLElement, formatting);
     if(!parent)
         return null;
     var textRange = range.toCharacterRange(container);
@@ -32,10 +37,10 @@ export function within(container: HTMLElement, formatting: Formatting): HTMLElem
     parentRange.selectNode(parent);
     var parentTextRange = parentRange.toCharacterRange(container);
     var parentFormatting = getFormatting(parent);
-    if(formatting.tag==parentFormatting.tag && formatting.value==parentFormatting.value && 
-        (textRange.start>parentTextRange.start && textRange.end==parentTextRange.end) ||
-        (textRange.start==parentTextRange.start && textRange.end<parentTextRange.end) || 
-        (textRange.start>parentTextRange.start && textRange.end<parentTextRange.end)){
+    if(equal(formatting, parentFormatting) && 
+        ((textRange.start>parentTextRange.start && textRange.end==parentTextRange.end) ||
+         (textRange.start==parentTextRange.start && textRange.end<parentTextRange.end) || 
+         (textRange.start>parentTextRange.start && textRange.end<parentTextRange.end))){
         return parent;
     }
     return null;
@@ -48,16 +53,21 @@ export function getRelation(container: HTMLElement, formatting: Formatting): Rel
         var treeWalker = document.createTreeWalker(currentNode as Node, NodeFilter.SHOW_ELEMENT);
         var range = rangy.createRange();
         var parent = within(container, formatting)
-        if(parent){
+        console.log(parent)
+        // console.log(formatting, getFormatting(parent as HTMLElement));
+        if(parent/* && formatting==getFormatting(parent)*/){
             return {elem: parent, type: RelationType.WITHIN};
         }
         while(currentNode = (treeWalker.nextNode() as HTMLElement)){
             range.selectNode(currentNode);
             var textRange = range.toCharacterRange(container);
-            if(formatting.tag!==null && currentNode.tagName==formatting.tag){
+            console.log(formatting, getFormatting(currentNode))
+            // if(formatting.tag!==null && currentNode.tagName==formatting.tag){
+            // if(formatting==getFormatting(currentNode)){
+            if(equal(formatting, getFormatting(currentNode))){
                 var relationType: RelationType|null = null;
                 // Catch the instance where the selection collides with the end of the containing node.
-                if(textRange.start<selectionTextRange.start && textRange.end==selectionTextRange.end){
+                if(textRange.start<selectionTextRange.start && textRange.end>=selectionTextRange.end){
                     relationType = RelationType.WITHIN;
                 } else if(overlaps(selectionTextRange, textRange)){
                     relationType = RelationType.OVERLAPS;

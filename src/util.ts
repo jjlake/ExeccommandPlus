@@ -1,5 +1,5 @@
 import Formatting from "./Formatting";
-import * as Tool from "./tools";
+import {tools, toolTags} from "./tools";
 
 var rangy = require("rangy");
 require("rangy/lib/rangy-textrange");
@@ -16,12 +16,15 @@ function getParents(limit: HTMLElement, currentNode: HTMLElement){
     return parents;
 }
 
-export function getParentOfType(limit: HTMLElement, currentNode: HTMLElement, /*formatting: Formatting,*/ tag: string): HTMLElement|null {
+export function getParentOfType(limit: HTMLElement, currentNode: HTMLElement, formatting: Formatting): HTMLElement|null {
     if(currentNode!=limit){
         while(currentNode!=limit){
             // var tag = formatting.tag;
-            // var value = currentNode.getAttribute(formatting.valueAttribute);
-            if(currentNode.tagName==tag/* && formatting.value==value*/){
+            let value = null
+            let getValFn = tools[toolTags[formatting.tag]];
+            if(getValFn != undefined)
+                value = (currentNode);
+            if(currentNode.tagName==formatting.tag && formatting.value==value){
                 return currentNode;
             }
             currentNode = currentNode.parentNode as HTMLElement;
@@ -38,7 +41,7 @@ export function getNodeFromBookmark(start: Number, end: Number, formatting: Form
         range.selectNode(currentNode);
         var newBookmark = range.toCharacterRange(document.getElementById("inputarea"))
         if(newBookmark.start==start && newBookmark.end==end ){
-            if(formatting.tag!==null && currentNode.tagName==formatting.tag||formatting.tag==null && formatting.value==Tool.tools[formatting.tag]['get'](currentNode))
+            if(formatting.tag!==null && currentNode.tagName==formatting.tag||formatting.tag==null && formatting.value==tools[formatting.tag]['get'](currentNode))
                 return currentNode;
         }
     }

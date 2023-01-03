@@ -22,5 +22,19 @@ addEventListener("load", function(){
         commandExecutor.execute(command);
         document.getElementById("inputarea").focus();
     });
+    let fgColSelect = document.getElementById("FgColSelect");
+    fgColSelect.addEventListener("change", function(){
+        console.log(fgColSelect.value);
+        var command = new execCommander.Command({tag: 'FONT', value: fgColSelect.value}, rangy.getSelection().getRangeAt(0));
+        commandExecutor.execute(command);
+        document.getElementById("inputarea").focus();
+    });
+    let bgColSelect = document.getElementById("BgColSelect");
+    bgColSelect.addEventListener("change", function(){
+        console.log(fgColSelect.value);
+        var command = new execCommander.Command({tag: 'SPAN', value: bgColSelect.value}, rangy.getSelection().getRangeAt(0));
+        commandExecutor.execute(command);
+        document.getElementById("inputarea").focus();
+    });
 });
 
