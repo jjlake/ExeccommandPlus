@@ -64,7 +64,6 @@ export class CommandExecutor {
         });
         this.mutationTracker.start();
         this.elem.focus();
-        console.log(this.mutationTracker)
     }
 
     // Start tracking all mutations (for undo/redo) in the attached contenteditable element.

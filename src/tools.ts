@@ -1,5 +1,5 @@
 export const tools: any = {
-    "fgColor": {
+    "foreColor": {
         "get": function(elem: HTMLElement){
             return elem.getAttribute("color");
         },
@@ -7,7 +7,7 @@ export const tools: any = {
             return elem.setAttribute("color", val);
         },
     },
-    "bgColor": {
+    "hiliteColor": {
         "get": function(elem: HTMLElement){
             return getComputedStyle(elem).backgroundColor;   
         },
@@ -21,7 +21,7 @@ export const toolTags: any = {
     'B': 'bold',
     'I': 'italic',
     'U': 'underline',
-    'STRIKE': "strikethrough",
-    'FONT': 'fgColor',
-    'SPAN': 'bgColor'
+    'STRIKE': "strikeThrough",
+    'FONT': 'foreColor',
+    'SPAN': 'hiliteColor'
 }

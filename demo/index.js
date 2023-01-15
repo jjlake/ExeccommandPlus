@@ -13,8 +13,9 @@ addEventListener("load", function(){
     document.getElementById("redoBtn").addEventListener("click", commandExecutor.redo);
     document.getElementById("undoBtn").addEventListener("click", commandExecutor.undo);
     document.getElementById("boldBtn").addEventListener("click", function(){
-        var command = new execCommander.Command({tag: 'B', value: null}, rangy.getSelection().getRangeAt(0));
-        commandExecutor.execute(command);
+        document.execCommand("bold",false,null)
+        // var command = new execCommander.Command({tag: 'B', value: null}, rangy.getSelection().getRangeAt(0));
+        // commandExecutor.execute(command);
         document.getElementById("inputarea").focus();
     });
     document.getElementById("italiciseBtn").addEventListener("click", function(){

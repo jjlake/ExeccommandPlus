@@ -14,8 +14,9 @@ addEventListener("load", function(){
     document.getElementById("redoBtn").addEventListener("click", commandExecutor.redo);
     document.getElementById("undoBtn").addEventListener("click", commandExecutor.undo);
     document.getElementById("boldBtn").addEventListener("click", function(){
-        var command = new execCommander.Command({tag: 'B', value: null}, rangy.getSelection().getRangeAt(0));
-        commandExecutor.execute(command);
+        document.execCommand("bold",false,null)
+        // var command = new execCommander.Command({tag: 'B', value: null}, rangy.getSelection().getRangeAt(0));
+        // commandExecutor.execute(command);
         document.getElementById("inputarea").focus();
     });
     document.getElementById("italiciseBtn").addEventListener("click", function(){
@@ -40,7 +41,7 @@ addEventListener("load", function(){
 });
 
 
-},{"../lib/index.js":"diffex","rangy":15}],2:[function(require,module,exports){
+},{"../lib/index.js":"diffex","rangy":16}],2:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Command = void 0;
@@ -94,7 +95,6 @@ class CommandExecutor {
         this.resetPendingNode();
         this.mutationTracker.undo();
         this.mutationTracker.start();
-        console.log(this.mutationTracker);
     }
     // Redo the latest set of changes undone by user.
     redo() {
@@ -126,7 +126,6 @@ class CommandExecutor {
             });
             this.mutationTracker.start();
             this.elem.focus();
-            console.log(this.mutationTracker);
         });
     }
     // Start tracking all mutations (for undo/redo) in the attached contenteditable element.
@@ -202,7 +201,7 @@ class CommandExecutor {
 exports.CommandExecutor = CommandExecutor;
 exports.default = CommandExecutor;
 
-},{"./Formatting":4,"./PendingNode":5,"mutationstack":13,"rangy":15}],4:[function(require,module,exports){
+},{"./Formatting":4,"./PendingNode":5,"mutationstack":14,"rangy":16}],4:[function(require,module,exports){
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -283,11 +282,10 @@ function applyFormatting(container, range, formatting) {
                 case relation_1.RelationType.CONTAINS:
                     manipulation.expand(container, relation.elem, range);
             }
-        } // else {
+        }
         // If no intersection with existing formatting elements of same type,
         //  just surround the range with a new formatting element.
         manipulation.surround(range, formatting);
-        //}
         // Set selection to collapse at end of the modified range.
         var newSelectionRange = rangy.createRange();
         newSelectionRange.selectCharacters(container, textRange.start, textRange.end);
@@ -306,8 +304,6 @@ function applyFormatting(container, range, formatting) {
             }
         }
         else {
-            // var elem = document.createElement(formatting.tag as string);
-            // return elem;
             return true;
         }
     }
@@ -315,9 +311,8 @@ function applyFormatting(container, range, formatting) {
 }
 exports.applyFormatting = applyFormatting;
 
-},{"./manipulation":6,"./relation":7,"./tools":8,"rangy":15}],5:[function(require,module,exports){
+},{"./manipulation":7,"./relation":8,"./tools":9,"rangy":16}],5:[function(require,module,exports){
 "use strict";
-// import { waitForMutation } from "./MutationTracker";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -360,7 +355,70 @@ class PendingNode {
 }
 exports.default = PendingNode;
 
-},{"rangy":15}],6:[function(require,module,exports){
+},{"rangy":16}],6:[function(require,module,exports){
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.execCommand = void 0;
+const Command_1 = __importDefault(require("./Command"));
+const CommandExecutor_1 = __importDefault(require("./CommandExecutor"));
+const rangy = require("rangy");
+const executors = new Map();
+const execCommandTags = new Map([
+    ['bold', 'B'],
+    ['italic', 'I']
+]);
+// From selection, get the first ancestor element that is contenteditable.
+function getContentEditableAncestor() {
+    let selection = rangy.getSelection();
+    if (selection.rangeCount == 0)
+        return null;
+    let range = selection.getRangeAt(0);
+    let node = range.commonAncestorContainer;
+    while (node.parentNode) {
+        node = node.parentNode;
+        if (node.nodeType == Node.ELEMENT_NODE) {
+            let elem = node;
+            if (elem.isContentEditable)
+                return elem;
+        }
+    }
+    return null;
+}
+function attachExecutor(elem) {
+    let executor = new CommandExecutor_1.default(elem);
+    executors.set(elem, executor);
+    return executor;
+}
+function execCommand(commandId, showUI, value) {
+    console.log("my execcommand");
+    let selection = rangy.getSelection();
+    if (selection.rangeCount == 0) {
+        throw Error("No selection found!");
+    }
+    let selectedElement = getContentEditableAncestor(); // find the contenteditable inside which user selection sits
+    if (!selectedElement) {
+        throw Error("No contenteditable div ancestor.");
+    }
+    let executor = executors.get(selectedElement);
+    if (!executor) {
+        executor = attachExecutor(selectedElement);
+    }
+    let range = selection.getRangeAt(0);
+    let tag = execCommandTags.get(commandId);
+    if (!tag) {
+        throw Error("Invalid command id (" + commandId + ").");
+    }
+    let formatting = { tag: tag, value: null };
+    let command = new Command_1.default(formatting, range);
+    executor.execute(command);
+    return true;
+}
+exports.execCommand = execCommand;
+
+},{"./Command":2,"./CommandExecutor":3,"rangy":16}],7:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.extend = exports.expand = exports.split = exports.surround = void 0;
@@ -444,7 +502,7 @@ function extend(selectionRange, container, tag) {
 }
 exports.extend = extend;
 
-},{"./Formatting":4,"./tools":8,"rangy":15,"rangy/lib/rangy-textrange":16}],7:[function(require,module,exports){
+},{"./Formatting":4,"./tools":9,"rangy":16,"rangy/lib/rangy-textrange":17}],8:[function(require,module,exports){
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -472,7 +530,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getRelation = exports.within = exports.equal = exports.RelationType = void 0;
 const Formatting_1 = require("./Formatting");
-// import * as manipulation from "./manipulation";
 const util = __importStar(require("./util"));
 var rangy = require("rangy");
 require("rangy/lib/rangy-textrange");
@@ -514,17 +571,12 @@ function getRelation(container, formatting) {
     var treeWalker = document.createTreeWalker(currentNode, NodeFilter.SHOW_ELEMENT);
     var range = rangy.createRange();
     var parent = within(container, formatting);
-    console.log(parent);
-    // console.log(formatting, getFormatting(parent as HTMLElement));
-    if (parent /* && formatting==getFormatting(parent)*/) {
+    if (parent) {
         return { elem: parent, type: RelationType.WITHIN };
     }
     while (currentNode = treeWalker.nextNode()) {
         range.selectNode(currentNode);
         var textRange = range.toCharacterRange(container);
-        console.log(formatting, (0, Formatting_1.getFormatting)(currentNode));
-        // if(formatting.tag!==null && currentNode.tagName==formatting.tag){
-        // if(formatting==getFormatting(currentNode)){
         if (equal(formatting, (0, Formatting_1.getFormatting)(currentNode))) {
             var relationType = null;
             // Catch the instance where the selection collides with the end of the containing node.
@@ -558,12 +610,12 @@ function overlaps(selection, range) {
     return range.start == selection.start && range.end == selection.end;
 }
 
-},{"./Formatting":4,"./util":9,"rangy":15,"rangy/lib/rangy-textrange":16}],8:[function(require,module,exports){
+},{"./Formatting":4,"./util":10,"rangy":16,"rangy/lib/rangy-textrange":17}],9:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.toolTags = exports.tools = void 0;
 exports.tools = {
-    "fgColor": {
+    "foreColor": {
         "get": function (elem) {
             return elem.getAttribute("color");
         },
@@ -571,7 +623,7 @@ exports.tools = {
             return elem.setAttribute("color", val);
         },
     },
-    "bgColor": {
+    "hiliteColor": {
         "get": function (elem) {
             return getComputedStyle(elem).backgroundColor;
         },
@@ -584,12 +636,12 @@ exports.toolTags = {
     'B': 'bold',
     'I': 'italic',
     'U': 'underline',
-    'STRIKE': "strikethrough",
-    'FONT': 'fgColor',
-    'SPAN': 'bgColor'
+    'STRIKE': "strikeThrough",
+    'FONT': 'foreColor',
+    'SPAN': 'hiliteColor'
 };
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getRangeAtSelection = exports.getNodeFromBookmark = exports.getParentOfType = void 0;
@@ -610,7 +662,6 @@ function getParents(limit, currentNode) {
 function getParentOfType(limit, currentNode, formatting) {
     if (currentNode != limit) {
         while (currentNode != limit) {
-            // var tag = formatting.tag;
             let value = null;
             let getValFn = tools_1.tools[tools_1.toolTags[formatting.tag]];
             if (getValFn != undefined)
@@ -644,7 +695,7 @@ function getRangeAtSelection() {
 }
 exports.getRangeAtSelection = getRangeAtSelection;
 
-},{"./tools":8,"rangy":15,"rangy/lib/rangy-textrange":16}],10:[function(require,module,exports){
+},{"./tools":9,"rangy":16,"rangy/lib/rangy-textrange":17}],11:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MutationStack = void 0;
@@ -679,7 +730,7 @@ class MutationStack {
 exports.MutationStack = MutationStack;
 exports.default = MutationStack;
 
-},{"./MutationStackRecord":11}],11:[function(require,module,exports){
+},{"./MutationStackRecord":12}],12:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.reverse = void 0;
@@ -752,7 +803,7 @@ function reverse(record) {
 }
 exports.reverse = reverse;
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -880,7 +931,7 @@ class MutationTracker {
 exports.MutationTracker = MutationTracker;
 exports.default = MutationTracker;
 
-},{"./MutationStack":10,"./input":14}],13:[function(require,module,exports){
+},{"./MutationStack":11,"./input":15}],14:[function(require,module,exports){
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -899,7 +950,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./MutationTracker"), exports);
 
-},{"./MutationTracker":12}],14:[function(require,module,exports){
+},{"./MutationTracker":13}],15:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.handleKeyUp = exports.setCtrlPressed = exports.ctrlPressed = void 0;
@@ -914,7 +965,7 @@ const handleKeyUp = (event) => {
 };
 exports.handleKeyUp = handleKeyUp;
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 /**
  * Rangy, a cross-browser JavaScript range and selection library
  * https://github.com/timdown/rangy
@@ -4811,7 +4862,7 @@ exports.handleKeyUp = handleKeyUp;
 
     return api;
 }, this);
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 /**
  * Text range module for Rangy.
  * Text-based manipulation and searching of ranges and selections.
@@ -6742,13 +6793,15 @@ exports.handleKeyUp = handleKeyUp;
     
     return rangy;
 }, this);
-},{"rangy":15}],"diffex":[function(require,module,exports){
+},{"rangy":16}],"diffex":[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Command = exports.CommandExecutor = void 0;
+const execcommand_1 = require("./execcommand");
 var CommandExecutor_1 = require("./CommandExecutor");
 Object.defineProperty(exports, "CommandExecutor", { enumerable: true, get: function () { return CommandExecutor_1.CommandExecutor; } });
 var Command_1 = require("./Command");
 Object.defineProperty(exports, "Command", { enumerable: true, get: function () { return Command_1.Command; } });
+document.execCommand = execcommand_1.execCommand;
 
-},{"./Command":2,"./CommandExecutor":3}]},{},[1]);
+},{"./Command":2,"./CommandExecutor":3,"./execcommand":6}]},{},[1]);

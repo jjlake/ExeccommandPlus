@@ -1,5 +1,4 @@
 import Formatting, { getFormatting } from "./Formatting";
-import { equal } from "./relation";
 import { tools, toolTags } from "./tools";
 const rangy = require("rangy");
 require("rangy/lib/rangy-textrange");
@@ -77,8 +76,6 @@ export function expand(containerNode: HTMLElement, elem: HTMLElement, range: Ran
     elem.outerHTML = elem.innerHTML;
     (document.getElementById("temp") as HTMLElement).id = "";
 }
-
-
 
 export function extend(selectionRange: RangyRange, container: HTMLElement, tag: string){
     Array.from(container.getElementsByTagName(tag)).forEach(elem => {
